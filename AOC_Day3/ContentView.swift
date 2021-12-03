@@ -33,53 +33,24 @@ struct ContentView: View {
         }
     }
     
-    func loadFile(fileName: String) -> String? {
-        guard let filepath = Bundle.main.path(forResource: fileName, ofType: "txt"),
-              let contents = try? String(contentsOfFile: filepath) else { return nil }
-        return contents
-    }
-    
-    func processFile(contents: String) -> [String] {
-        return contents.components(separatedBy: "\n").filter { $0 != "" }
-    }
-    
-    func makeBinary(input: String) -> [Int] {
-        var binaryArray: [Int] = []
-        
-        for character in input {
-            if let digit = Int(character.description) {
-                binaryArray.append(digit)
-            }
-        }
-        return binaryArray
-    }
-    
-    func rowsAsBinary(fileName: String) -> [[Int]]? {
-        guard let contents = loadFile(fileName: "input-3") else { return nil }
-        let components = processFile(contents: contents)
-//        let components = processFile(contents: example)
-        let componentAsBinary = components.map { makeBinary(input: $0) }
-        return componentAsBinary
-    }
     
     func processingResults(fileName: String) -> Int? {
         guard let rows = rowsAsBinary(fileName: "input-3") else { return nil }
         var oxygenRow = rows
         var c02Row = rows
         
-        for i in 0..<12 {
+        for i in 0..<rows[0].count {
             oxygenRow = filtering(rows: oxygenRow, index: i, oxygen: true) ?? []
             if oxygenRow.count == 1 { break }
         }
         
-        for i in 0..<12 {
+        for i in 0..<rows[0].count {
             c02Row = filtering(rows: c02Row, index: i, oxygen: false) ?? []
             if c02Row.count == 1 { break }
         }
-
+        
         let oxygenInt = binaryToInt(binaryString: binaryToString(binaryRow: oxygenRow.flatMap { $0 }))
         let c02Int = binaryToInt(binaryString: binaryToString(binaryRow: c02Row.flatMap { $0 }))
-        
         return oxygenInt * c02Int
     }
     
@@ -103,13 +74,41 @@ struct ContentView: View {
                 if rows[i][index] == 1 {
                     editedRows.append(rows[i])
                 }
-            } else if (oxygen && count0 > count1) || (!oxygen && count1 >= count0) {
-                if rows[i][index] == 0 {
-                    editedRows.append(rows[i])
-                }
+            } else if rows[i][index] == 0 {
+                editedRows.append(rows[i])
             }
         }
         return editedRows
+    }
+    
+    func loadFile(fileName: String) -> String? {
+        guard let filepath = Bundle.main.path(forResource: fileName, ofType: "txt"),
+              let contents = try? String(contentsOfFile: filepath) else { return nil }
+        return contents
+    }
+    
+    func processFile(contents: String) -> [String] {
+        return contents.components(separatedBy: "\n").filter { $0 != "" }
+    }
+    
+    func makeBinary(input: String) -> [Int] {
+        var binaryArray: [Int] = []
+        
+        for character in input {
+            if let digit = Int(character.description) {
+                binaryArray.append(digit)
+            }
+        }
+        return binaryArray
+    }
+    
+    
+    func rowsAsBinary(fileName: String) -> [[Int]]? {
+        guard let contents = loadFile(fileName: "input-3") else { return nil }
+        let components = processFile(contents: contents)
+        //        let components = processFile(contents: example)
+        let componentAsBinary = components.map { makeBinary(input: $0) }
+        return componentAsBinary
     }
     
     func binaryToString(binaryRow: [Int]) -> String {
@@ -124,11 +123,11 @@ struct ContentView: View {
     func verticalBinaryTotals(fileName: String) -> Int? {
         guard let contents = loadFile(fileName: "input-3") else { return nil }
         let components = processFile(contents: contents)
-        
         let totalRows = components.count
-        
         var totals: [Int] = [0,0,0, 0,0,0, 0,0,0, 0,0,0]
-
+        var binaryResult1 = ""
+        var binaryResult2 = ""
+        
         for component in components {
             let binary = makeBinary(input: component)
             
@@ -136,27 +135,19 @@ struct ContentView: View {
                 totals[i] += binary[i]
             }
         }
-        
-        var binaryResult1 = ""
-        var binaryResult2 = ""
-        
+
         for total in totals {
             binaryResult1 += String(averagedToBinary(input: total, divisor: totalRows))
-        }
-        
-        for total in totals {
+            
             if averagedToBinary(input: total, divisor: totalRows) == 0 {
                 binaryResult2 += "1"
             } else {
                 binaryResult2 += "0"
             }
         }
-        
-        let result1 = binaryToInt(binaryString: binaryResult1)
-        let result2 = binaryToInt(binaryString: binaryResult2)
-
-        return result1 * result2
+        return binaryToInt(binaryString: binaryResult1) * binaryToInt(binaryString: binaryResult2)
     }
+    
     
     func averagedToBinary(input: Int, divisor: Int) -> Int {
         let average: Double = Double(input) / Double(divisor)
@@ -167,10 +158,11 @@ struct ContentView: View {
         }
     }
     
+    
     func binaryToInt(binaryString: String) -> Int {
         return Int(strtoul(binaryString, nil, 2))
     }
-
+    
 }
 
 struct ContentView_Previews: PreviewProvider {
